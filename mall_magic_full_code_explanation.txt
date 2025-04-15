@@ -1,0 +1,1398 @@
+
+# Mall Magic - Complete Code Explanation
+
+## App Structure
+
+### src/App.tsx
+```tsx
+import React, { useState } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Dashboard from "./components/layout/Dashboard";
+import DashboardPage from "./pages/DashboardPage";
+import AdminPage from "./pages/AdminPage";
+import SalesPage from "./pages/SalesPage";
+import InventoryPage from "./pages/InventoryPage";
+import PurchasePage from "./pages/PurchasePage";
+import PaymentPage from "./pages/PaymentPage";
+import IssuesPage from "./pages/IssuesPage";
+import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
+
+const queryClient = new QueryClient();
+
+const App = () => {
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Dashboard />}>
+              <Route index element={<Index />} />
+              <Route path="dashboard" element={<DashboardPage language={language} />} />
+              <Route path="admin" element={<AdminPage language={language} />} />
+              <Route path="sales" element={<SalesPage language={language} />} />
+              <Route path="inventory" element={<InventoryPage language={language} />} />
+              <Route path="purchase" element={<PurchasePage language={language} />} />
+              <Route path="payment" element={<PaymentPage language={language} />} />
+              <Route path="issues" element={<IssuesPage language={language} />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;
+```
+
+**Explanation:** Main application component setting up React Query for data fetching, notification systems, and React Router for navigation. Defines all page routes and passes language state.
+
+## Layout Components
+
+### src/components/layout/Dashboard.tsx
+```tsx
+import React, { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Header from './Header';
+
+const Dashboard = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect to dashboard if on index page
+  React.useEffect(() => {
+    if (location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [location.pathname, navigate]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en');
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar isOpen={sidebarOpen} language={language} />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header 
+          toggleSidebar={toggleSidebar} 
+          sidebarOpen={sidebarOpen} 
+          language={language}
+          toggleLanguage={toggleLanguage}
+        />
+        
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-6">
+          <Outlet context={{ language, setLanguage }} />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+**Explanation:** Main layout wrapper handling sidebar toggle, language switching between English and Hindi, and content rendering with React Router's Outlet.
+
+### src/components/layout/Sidebar.tsx
+```tsx
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { 
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Users,
+  ClipboardList,
+  CreditCard,
+  AlertTriangle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+
+interface SidebarProps {
+  isOpen: boolean;
+  language: 'en' | 'hi';
+}
+
+interface NavItem {
+  path: string;
+  label: {
+    en: string;
+    hi: string;
+  };
+  icon: React.ElementType;
+}
+
+const navItems: NavItem[] = [
+  {
+    path: '/dashboard',
+    label: { en: 'Dashboard', hi: 'डैशबोर्ड' },
+    icon: LayoutDashboard
+  },
+  {
+    path: '/admin',
+    label: { en: 'Admin', hi: 'प्रशासन' },
+    icon: Users
+  },
+  {
+    path: '/sales',
+    label: { en: 'Sales', hi: 'बिक्री' },
+    icon: ShoppingCart
+  },
+  {
+    path: '/inventory',
+    label: { en: 'Inventory', hi: 'इन्वेंटरी' },
+    icon: Package
+  },
+  {
+    path: '/purchase',
+    label: { en: 'Purchase', hi: 'खरीदारी' },
+    icon: ClipboardList
+  },
+  {
+    path: '/payment',
+    label: { en: 'Payments', hi: 'भुगतान' },
+    icon: CreditCard
+  },
+  {
+    path: '/issues',
+    label: { en: 'Issues', hi: 'मुद्दे' },
+    icon: AlertTriangle
+  }
+];
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, language }) => {
+  return (
+    <aside 
+      className={cn(
+        "bg-sidebar text-sidebar-foreground border-r border-gray-200 transition-all duration-300 ease-in-out",
+        isOpen ? "w-64" : "w-20"
+      )}
+    >
+      <div className="p-4 flex items-center justify-center h-16">
+        <span className={cn(
+          "text-lg font-semibold text-indian-purple transition-opacity",
+          isOpen ? "opacity-100" : "opacity-0"
+        )}>
+          {language === 'en' ? 'Mall Magic' : 'मॉल मैजिक'}
+        </span>
+        {!isOpen && (
+          <span className="text-xl font-bold text-indian-purple">MM</span>
+        )}
+      </div>
+      
+      <Separator />
+      
+      <nav className="px-2 py-4">
+        <ul className="space-y-1">
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) => cn(
+                  "flex items-center px-4 py-2 rounded-md transition-colors",
+                  isActive 
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+                  !isOpen && "justify-center"
+                )}
+              >
+                <item.icon size={20} className={cn(!isOpen && "mx-auto")} />
+                {isOpen && (
+                  <span className="ml-3">{item.label[language]}</span>
+                )}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </aside>
+  );
+};
+
+export default Sidebar;
+```
+
+**Explanation:** Navigation sidebar that collapses/expands and displays different menu items with icons. Supports both English and Hindi labels for accessibility.
+
+### src/components/layout/Header.tsx
+```tsx
+import React from 'react';
+import { 
+  Bell, 
+  Menu, 
+  X, 
+  User,
+  Moon,
+  Sun,
+  ChevronDown
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+interface HeaderProps {
+  toggleSidebar: () => void;
+  sidebarOpen: boolean;
+  language: 'en' | 'hi';
+  toggleLanguage: () => void;
+}
+
+const translations = {
+  en: {
+    profile: 'Profile',
+    settings: 'Settings',
+    logout: 'Logout',
+    notifications: 'Notifications',
+    theme: 'Toggle Theme'
+  },
+  hi: {
+    profile: 'प्रोफ़ाइल',
+    settings: 'समायोजन',
+    logout: 'लॉग आउट',
+    notifications: 'सूचनाएं',
+    theme: 'थीम बदलें'
+  }
+};
+
+const Header: React.FC<HeaderProps> = ({ 
+  toggleSidebar, 
+  sidebarOpen,
+  language,
+  toggleLanguage
+}) => {
+  const t = translations[language];
+  
+  return (
+    <header className="sticky top-0 z-10 bg-white shadow-sm h-16 flex items-center justify-between px-4 md:px-6">
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2"
+          onClick={toggleSidebar}
+          aria-label="Toggle navigation"
+        >
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </Button>
+        <h1 className="text-xl font-semibold text-gray-800 hidden md:block">
+          {language === 'en' ? 'Indian Mall Management System' : 'भारतीय मॉल प्रबंधन प्रणाली'}
+        </h1>
+      </div>
+      
+      <div className="flex items-center space-x-4">
+        {/* Language Switch */}
+        <Button
+          variant="outline"
+          className="text-sm"
+          onClick={toggleLanguage}
+        >
+          {language === 'en' ? 'हिंदी' : 'English'}
+        </Button>
+        
+        {/* Theme Toggle */}
+        <Button variant="ghost" size="icon" className="text-gray-600 hover:text-gray-900">
+          <Sun size={20} className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon size={20} className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">{t.theme}</span>
+        </Button>
+        
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell size={20} />
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-indian-red"></span>
+              <span className="sr-only">{t.notifications}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>{t.notifications}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="max-h-80 overflow-auto">
+              {[...Array(3)].map((_, i) => (
+                <DropdownMenuItem key={i} className="p-4 cursor-pointer">
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium">{language === 'en' ? `Notification ${i+1}` : `सूचना ${i+1}`}</p>
+                    <p className="text-sm text-gray-500">{language === 'en' ? 'This is a notification message.' : 'यह एक सूचना संदेश है।'}</p>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar>
+                <AvatarFallback className="bg-indian-purple text-white">MM</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{language === 'en' ? 'My Account' : 'मेरा खाता'}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+              <span>{t.profile}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              {t.settings}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              {t.logout}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
+```
+
+**Explanation:** Application header with language toggle, theme toggle, notifications dropdown, and user profile menu. Includes sidebar toggle button and application title.
+
+## Dashboard Components
+
+### src/components/dashboard/StatCard.tsx
+```tsx
+import { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: ReactNode;
+  description?: string;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  className?: string;
+}
+
+const StatCard = ({ 
+  title, 
+  value, 
+  icon, 
+  description, 
+  trend, 
+  className 
+}: StatCardProps) => {
+  return (
+    <Card className={cn("card-hover", className)}>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <h3 className="text-2xl font-bold mt-1">{value}</h3>
+            
+            {trend && (
+              <div className="flex items-center mt-1">
+                <span 
+                  className={cn(
+                    "text-xs font-medium",
+                    trend.isPositive ? "text-indian-green" : "text-indian-red"
+                  )}
+                >
+                  {trend.isPositive ? '+' : ''}{trend.value}%
+                </span>
+                {description && (
+                  <span className="text-xs text-muted-foreground ml-1.5">
+                    {description}
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {!trend && description && (
+              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+            )}
+          </div>
+          
+          <div className="rounded-full p-3 bg-primary/10 text-primary">
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default StatCard;
+```
+
+**Explanation:** Reusable stats card showing key metrics with optional trend indicators. Uses color-coding to visualize positive/negative trends and includes an icon.
+
+### src/components/dashboard/RevenueChart.tsx
+```tsx
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
+interface RevenueChartProps {
+  language: 'en' | 'hi';
+}
+
+const monthNames = {
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  hi: ['जन', 'फर', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुल', 'अग', 'सित', 'अक्टू', 'नव', 'दिस']
+};
+
+const data = [
+  { name: 'Jan', revenue: 145000 },
+  { name: 'Feb', revenue: 159000 },
+  { name: 'Mar', revenue: 170000 },
+  { name: 'Apr', revenue: 190000 },
+  { name: 'May', revenue: 210000 },
+  { name: 'Jun', revenue: 250000 },
+  { name: 'Jul', revenue: 290000 },
+  { name: 'Aug', revenue: 315000 },
+  { name: 'Sep', revenue: 335000 },
+  { name: 'Oct', revenue: 350000 },
+  { name: 'Nov', revenue: 370000 },
+  { name: 'Dec', revenue: 398000 },
+];
+
+const RevenueChart: React.FC<RevenueChartProps> = ({ language }) => {
+  // Create translated data
+  const translatedData = data.map((item, index) => ({
+    name: monthNames[language][index],
+    revenue: item.revenue,
+  }));
+
+  const formatCurrency = (value: number) => {
+    return `₹${(value / 1000).toFixed(0)}k`;
+  };
+
+  return (
+    <Card className="col-span-4 card-hover">
+      <CardHeader>
+        <CardTitle>
+          {language === 'en' ? 'Revenue Overview' : 'राजस्व अवलोकन'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pl-2">
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart
+            data={translatedData}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
+            <defs>
+              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#6E59A5" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#6E59A5" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={formatCurrency} />
+            <Tooltip 
+              formatter={(value) => [`₹${value}`, language === 'en' ? 'Revenue' : 'राजस्व']}
+              labelFormatter={(label) => {
+                const index = monthNames[language].indexOf(label);
+                return language === 'en' ? `${monthNames.en[index]} 2023` : `${monthNames.hi[index]} 2023`;
+              }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="revenue" 
+              stroke="#6E59A5" 
+              fillOpacity={1} 
+              fill="url(#colorRevenue)" 
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default RevenueChart;
+```
+
+**Explanation:** Revenue chart using Recharts library to display monthly revenue data as an area chart. Includes formatted tooltips and multi-language support.
+
+### src/components/dashboard/RecentTransactions.tsx
+```tsx
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+interface TransactionsProps {
+  language: 'en' | 'hi';
+}
+
+interface Transaction {
+  id: string;
+  store: string;
+  amount: number;
+  status: 'completed' | 'processing' | 'failed';
+  date: string;
+}
+
+const transactions: Transaction[] = [
+  {
+    id: 'INV001',
+    store: 'Chennai Silks',
+    amount: 42500,
+    status: 'completed',
+    date: '2023-11-14',
+  },
+  {
+    id: 'INV002',
+    store: 'Bombay Electronics',
+    amount: 35750,
+    status: 'processing',
+    date: '2023-11-14',
+  },
+  {
+    id: 'INV003',
+    store: 'Delhi Sweets',
+    amount: 12999,
+    status: 'completed',
+    date: '2023-11-13',
+  },
+  {
+    id: 'INV004',
+    store: 'Mumbai Fashion',
+    amount: 28499,
+    status: 'failed',
+    date: '2023-11-13',
+  },
+  {
+    id: 'INV005',
+    store: 'Kolkata Books',
+    amount: 8750,
+    status: 'completed',
+    date: '2023-11-12',
+  },
+];
+
+const statusTranslations = {
+  en: {
+    completed: 'Completed',
+    processing: 'Processing',
+    failed: 'Failed',
+  },
+  hi: {
+    completed: 'पूर्ण',
+    processing: 'प्रगति पर',
+    failed: 'विफल',
+  },
+};
+
+const tableHeadTranslations = {
+  en: {
+    invoice: 'Invoice',
+    store: 'Store',
+    amount: 'Amount',
+    status: 'Status',
+    date: 'Date',
+  },
+  hi: {
+    invoice: 'चालान',
+    store: 'स्टोर',
+    amount: 'राशि',
+    status: 'स्थिति',
+    date: 'तारीख',
+  },
+};
+
+const RecentTransactions: React.FC<TransactionsProps> = ({ language }) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat(language === 'en' ? 'en-IN' : 'hi-IN').format(date);
+  };
+
+  const t = tableHeadTranslations[language];
+  const statusT = statusTranslations[language];
+
+  return (
+    <Card className="col-span-4 card-hover">
+      <CardHeader>
+        <CardTitle>
+          {language === 'en' ? 'Recent Transactions' : 'हाल के लेनदेन'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t.invoice}</TableHead>
+              <TableHead>{t.store}</TableHead>
+              <TableHead>{t.amount}</TableHead>
+              <TableHead>{t.status}</TableHead>
+              <TableHead className="text-right">{t.date}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.map((transaction) => (
+              <TableRow key={transaction.id}>
+                <TableCell className="font-medium">{transaction.id}</TableCell>
+                <TableCell>{transaction.store}</TableCell>
+                <TableCell className="inr">{transaction.amount.toLocaleString('en-IN')}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "bg-opacity-10 border-0",
+                      transaction.status === 'completed' && "bg-indian-green text-indian-green",
+                      transaction.status === 'processing' && "bg-indian-orange text-indian-orange",
+                      transaction.status === 'failed' && "bg-indian-red text-indian-red"
+                    )}
+                  >
+                    {statusT[transaction.status]}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">{formatDate(transaction.date)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default RecentTransactions;
+```
+
+**Explanation:** Transactions table component showing recent financial activities with status badges. Supports date formatting in different languages and color-coded status.
+
+## Form Components
+
+### src/components/forms/TenantForm.tsx
+```tsx
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+
+interface TenantFormProps {
+  language: 'en' | 'hi';
+  initialData?: {
+    id?: string;
+    name?: string;
+    category?: string;
+    location?: string;
+    gstin?: string;
+    status?: 'active' | 'pending' | 'inactive';
+  };
+  onSuccess?: () => void;
+}
+
+const TenantForm: React.FC<TenantFormProps> = ({ language, initialData, onSuccess }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const translations = {
+    en: {
+      name: "Name",
+      category: "Category",
+      location: "Location",
+      gstin: "GSTIN",
+      status: "Status",
+      active: "Active",
+      pending: "Pending",
+      inactive: "Inactive",
+      save: "Save",
+      cancel: "Cancel",
+      requiredField: "This field is required",
+      successAdd: "Tenant added successfully",
+      successEdit: "Tenant updated successfully",
+      gstinFormat: "GSTIN must be in the format: 33AABCT1234Z1Z5"
+    },
+    hi: {
+      name: "नाम",
+      category: "श्रेणी",
+      location: "स्थान",
+      gstin: "जीएसटीआईएन",
+      status: "स्थिति",
+      active: "सक्रिय",
+      pending: "लंबित",
+      inactive: "निष्क्रिय",
+      save: "सहेजें",
+      cancel: "रद्द करें",
+      requiredField: "यह फील्ड आवश्यक है",
+      successAdd: "किरायेदार सफलतापूर्वक जोड़ा गया",
+      successEdit: "किरायेदार सफलतापूर्वक अपडेट किया गया",
+      gstinFormat: "GSTIN का फॉर्मेट इस प्रकार होना चाहिए: 33AABCT1234Z1Z5"
+    }
+  };
+
+  const t = translations[language];
+
+  const formSchema = z.object({
+    name: z.string().min(1, { message: t.requiredField }),
+    category: z.string().min(1, { message: t.requiredField }),
+    location: z.string().min(1, { message: t.requiredField }),
+    gstin: z.string().regex(/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/, {
+      message: t.gstinFormat,
+    }),
+    status: z.enum(["active", "pending", "inactive"])
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      category: initialData?.category || "",
+      location: initialData?.location || "",
+      gstin: initialData?.gstin || "",
+      status: (initialData?.status as "active" | "pending" | "inactive") || "active"
+    }
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Show success notification
+    if (initialData?.id) {
+      toast.success(t.successEdit);
+    } else {
+      toast.success(t.successAdd);
+    }
+    
+    setIsSubmitting(false);
+    if (onSuccess) onSuccess();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.name}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.category}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.location}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="gstin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.gstin}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.status}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.status} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">{t.active}</SelectItem>
+                  <SelectItem value="pending">{t.pending}</SelectItem>
+                  <SelectItem value="inactive">{t.inactive}</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end gap-2">
+          <Button type="submit" disabled={isSubmitting}>{t.save}</Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+export default TenantForm;
+```
+
+**Explanation:** Form for adding/editing mall tenants with validation using Zod. Includes localization support and toast notifications for successful submissions.
+
+### src/components/forms/PurchaseItemForm.tsx
+```tsx
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+
+interface PurchaseItemFormProps {
+  language: 'en' | 'hi';
+  initialData?: {
+    id?: string;
+    vendor?: string;
+    date?: string;
+    items?: number;
+    value?: string;
+    status?: 'completed' | 'pending' | 'processing';
+  };
+  onSuccess?: () => void;
+}
+
+const PurchaseItemForm: React.FC<PurchaseItemFormProps> = ({ language, initialData, onSuccess }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const translations = {
+    en: {
+      vendor: "Vendor",
+      date: "Date",
+      items: "Number of Items",
+      value: "Value (₹)",
+      status: "Status",
+      completed: "Completed",
+      pending: "Pending",
+      processing: "Processing",
+      save: "Save",
+      cancel: "Cancel",
+      requiredField: "This field is required",
+      positiveNumber: "Must be a positive number",
+      successAdd: "Purchase order added successfully",
+      successEdit: "Purchase order updated successfully"
+    },
+    hi: {
+      vendor: "विक्रेता",
+      date: "तारीख",
+      items: "आइटम संख्या",
+      value: "मूल्य (₹)",
+      status: "स्थिति",
+      completed: "पूरा हुआ",
+      pending: "लंबित",
+      processing: "प्रसंस्करण",
+      save: "सहेजें",
+      cancel: "रद्द करें",
+      requiredField: "यह फील्ड आवश्यक है",
+      positiveNumber: "एक सकारात्मक संख्या होनी चाहिए",
+      successAdd: "खरीद आदेश सफलतापूर्वक जोड़ा गया",
+      successEdit: "खरीद आदेश सफलतापूर्वक अपडेट किया गया"
+    }
+  };
+
+  const t = translations[language];
+
+  const formSchema = z.object({
+    vendor: z.string().min(1, { message: t.requiredField }),
+    date: z.string().min(1, { message: t.requiredField }),
+    items: z.coerce.number().positive({ message: t.positiveNumber }),
+    value: z.string().min(1, { message: t.requiredField }),
+    status: z.enum(["completed", "pending", "processing"])
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      vendor: initialData?.vendor || "",
+      date: initialData?.date || new Date().toISOString().split('T')[0],
+      items: initialData?.items || 1,
+      value: initialData?.value?.replace('₹', '') || "",
+      status: (initialData?.status as "completed" | "pending" | "processing") || "pending"
+    }
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Show success notification
+    if (initialData?.id) {
+      toast.success(t.successEdit);
+    } else {
+      toast.success(t.successAdd);
+    }
+    
+    setIsSubmitting(false);
+    if (onSuccess) onSuccess();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="vendor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.vendor}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.date}</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex gap-4">
+          <FormField
+            control={form.control}
+            name="items"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>{t.items}</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="value"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>{t.value}</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.status}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.status} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="completed">{t.completed}</SelectItem>
+                  <SelectItem value="pending">{t.pending}</SelectItem>
+                  <SelectItem value="processing">{t.processing}</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end gap-2">
+          <Button type="submit" disabled={isSubmitting}>{t.save}</Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+export default PurchaseItemForm;
+```
+
+**Explanation:** Purchase order form with validation and bilingual support. Handles dates, quantities, monetary values, and status selection with appropriate feedback.
+
+### src/components/forms/InventoryItemForm.tsx
+```tsx
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+
+interface InventoryItemFormProps {
+  language: 'en' | 'hi';
+  initialData?: {
+    id?: string;
+    name?: string;
+    category?: string;
+    store?: string;
+    quantity?: number;
+    price?: number;
+    stockLevel?: 'low' | 'medium' | 'high';
+  };
+  onSuccess?: () => void;
+}
+
+const InventoryItemForm: React.FC<InventoryItemFormProps> = ({ language, initialData, onSuccess }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const translations = {
+    en: {
+      name: "Item Name",
+      category: "Category",
+      store: "Store",
+      quantity: "Quantity",
+      price: "Price",
+      stockLevel: "Stock Level",
+      low: "Low",
+      medium: "Medium",
+      high: "High",
+      save: "Save",
+      cancel: "Cancel",
+      requiredField: "This field is required",
+      positiveNumber: "Must be a positive number",
+      successAdd: "Inventory item added successfully",
+      successEdit: "Inventory item updated successfully"
+    },
+    hi: {
+      name: "आइटम नाम",
+      category: "श्रेणी",
+      store: "स्टोर",
+      quantity: "मात्रा",
+      price: "मूल्य",
+      stockLevel: "स्टॉक स्तर",
+      low: "कम",
+      medium: "मध्यम",
+      high: "उच्च",
+      save: "सहेजें",
+      cancel: "रद्द करें",
+      requiredField: "यह फील्ड आवश्यक है",
+      positiveNumber: "एक सकारात्मक संख्या होनी चाहिए",
+      successAdd: "इन्वेंटरी आइटम सफलतापूर्वक जोड़ा गया",
+      successEdit: "इन्वेंटरी आइटम सफलतापूर्वक अपडेट किया गया"
+    }
+  };
+
+  const t = translations[language];
+
+  const formSchema = z.object({
+    name: z.string().min(1, { message: t.requiredField }),
+    category: z.string().min(1, { message: t.requiredField }),
+    store: z.string().min(1, { message: t.requiredField }),
+    quantity: z.coerce.number().positive({ message: t.positiveNumber }),
+    price: z.coerce.number().positive({ message: t.positiveNumber }),
+    stockLevel: z.enum(["low", "medium", "high"])
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      category: initialData?.category || "",
+      store: initialData?.store || "",
+      quantity: initialData?.quantity || 0,
+      price: initialData?.price || 0,
+      stockLevel: (initialData?.stockLevel as "low" | "medium" | "high") || "medium"
+    }
+  });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Show success notification
+    if (initialData?.id) {
+      toast.success(t.successEdit);
+    } else {
+      toast.success(t.successAdd);
+    }
+    
+    setIsSubmitting(false);
+    if (onSuccess) onSuccess();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.name}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.category}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="store"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.store}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex gap-4">
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>{t.quantity}</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>{t.price}</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="stockLevel"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t.stockLevel}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t.stockLevel} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="low">{t.low}</SelectItem>
+                  <SelectItem value="medium">{t.medium}</SelectItem>
+                  <SelectItem value="high">{t.high}</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end gap-2">
+          <Button type="submit" disabled={isSubmitting}>{t.save}</Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+export default InventoryItemForm;
+```
+
+**Explanation:** Inventory management form for adding/editing products with bilingual support. Handles quantity, pricing, and stock level categorization with validation.
+
+## Project Architecture and Integration
+
+The Mall Magic system is built as a React application using TypeScript for type safety. The application structure follows these key principles:
+
+1. **Component-Based Architecture**: The UI is broken down into reusable components like StatCard, RevenueChart, and various forms.
+
+2. **Responsive Design**: Components are designed to work across different screen sizes using Tailwind CSS utility classes.
+
+3. **Consistent UI**: The application uses shadcn/ui components for a cohesive design language.
+
+4. **Internationalization**: The application supports both English and Hindi languages with translation objects for all UI elements.
+
+5. **Form Validation**: Zod schema validation is used across all forms to ensure data integrity.
+
+6. **State Management**: React's useState hook is used for local state, while React Query handles data fetching (though the examples use mock data).
+
+7. **Routing**: React Router manages navigation between different sections of the application.
+
+8. **Notifications**: Toast notifications provide user feedback for form submissions and other actions.
+
+The system's components are connected through the main App and Dashboard components, which provide the layout structure. Language preference is passed down through props from the Dashboard to child components. The UI consistently uses Tailwind CSS for styling and shadcn/ui components for advanced UI elements like dropdowns, selects, and modals.
+
+All forms in the system follow the same pattern: they use React Hook Form with Zod validation, display translated labels and error messages based on the selected language, and show toast notifications for successful submissions. Many components also implement responsive designs that adapt to different screen sizes.
+
+The application follows good React practices like keeping components small and focused, lifting shared state to parent components, and using TypeScript interfaces to define prop types for better code quality and developer experience.
